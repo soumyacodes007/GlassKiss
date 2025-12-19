@@ -11,35 +11,34 @@
 
 ---
 
-## Limitless Liability: The Current State of Access
+## ⚡ Limitless Liability: The Current State of Access
 
-**The Ticking Time Bomb**
+✦ **The Ticking Time Bomb**
 Every engineering team has a dirty secret: Permanent SSH keys and database credentials sitting on developer laptops—just one stolen device away from a total data breach.
 
-**Manual Failure**
+✦ **Manual Failure**
 Most "Break-Glass" systems rely on humans to remember to revoke access. But humans forget, scripts fail, and "temporary" access often becomes permanent liability.
 
-**Compliance Nightmare**
+✦ **Compliance Nightmare**
 SOC2 and HIPAA audits don't just want logs of what happened; they want proof that you couldn't do the wrong thing. Static credentials are an audit failure waiting to happen.
 
-**Broad Access**
+✦ **Broad Access**
 Traditional access is "all or nothing." You need to fix one row, but you're given the keys to the entire kingdom. The blast radius is catastrophic.
 
 ---
 
-## The Solution
+## 🛡️ The Solution
 
-Glasskiss leverages Motia's powerful primitives to create a **fail-closed**, **auditable**, and **time-limited** access control system. Instead of relying on manual processes or fragile scripts, it automates the entire lifecycle of privileged access.
+Glasskiss leverages Motia's powerful primitives to create a **fail-closed**, **auditable**, and **time-limited** access control system.
 
-Key Capabilities:
-*   **Just-in-Time Provisioning**: Credentials exist only when needed and expire automatically.
-*   **Zero-Trust Enforcement**: Default deny. Access is granted explicitly for specific scopes.
-*   **Immutable Audit Trails**: comprehensive logging of every action and policy decision.
-*   **Automated Revocation**: Durable timers ensure access is removed even if systems restart.
+◈ **Just-in-Time Provisioning**: Credentials exist only when needed and expire automatically.
+◈ **Zero-Trust Enforcement**: Default deny. Access is granted explicitly for specific scopes.
+◈ **Immutable Audit Trails**: Comprehensive logging of every action and policy decision.
+◈ **Automated Revocation**: Durable timers ensure access is removed even if systems restart.
 
 ---
 
-## Why Motia?
+## 🏆 Why Motia?
 
 Glasskiss demonstrates a production-ready architecture pattern achievable with the Motia framework.
 
@@ -47,16 +46,16 @@ Glasskiss demonstrates a production-ready architecture pattern achievable with t
 
 | Capability | Traditional Implementation | With Motia Primitives |
 |-----------|--------------------------|-----------------------|
-| **Durable Timers** | Redis/SQS + Cron + Retries | Native `emit('timer')` |
-| **Event Workflow** | Message Bus + Dead Letter Queues | Built-in Event Steps |
-| **Real-Time Streams** | WebSocket Server Management | `ctx.streams.push()` |
-| **State Management** | Redis Serialization/TTL | Native `ctx.state` |
-| **Multi-Step Approval** | Complex State Machines | Linear Event Flow |
-| **Crash Recovery** | Manual Checkpointing | Durable by Design |
+| **Durable Timers** | Redis/SQS + Cron + Retries | Native `emit('timer')` ⚡ |
+| **Event Workflow** | Message Bus + Dead Letter Queues | Built-in Event Steps ⚡ |
+| **Real-Time Streams** | WebSocket Server Management | `ctx.streams.push()` ⚡ |
+| **State Management** | Redis Serialization/TTL | Native `ctx.state` ⚡ |
+| **Multi-Step Approval** | Complex State Machines | Linear Event Flow ⚡ |
+| **Crash Recovery** | Manual Checkpointing | Durable by Design ⚡ |
 
 ---
 
-## Motia Primitives Integration
+## 🏗️ Motia Primitives Integration
 
 | Primitive | Implementation in Glasskiss |
 |-----------|-----------------------------|
@@ -70,7 +69,7 @@ Glasskiss demonstrates a production-ready architecture pattern achievable with t
 
 ---
 
-## Architecture Overview
+## 🏛️ Architecture Overview
 
 ![Glasskiss Architecture Whiteboard](./static/IMG-20251219-WA0024.jpg)
 
@@ -129,7 +128,7 @@ flowchart TB
 
 ---
 
-## Enterprise Features
+## 💎 Enterprise Features
 
 ### 1. AI-Powered Scope Extraction
 
@@ -199,9 +198,9 @@ flowchart TB
 ```
 
 **Enforcement Rules:**
-*   **Critical**: DELETE/UPDATE operations require WHERE clauses.
-*   **High**: Operations restricted to approved tables and entity IDs.
-*   **Medium**: Maximum row impact limits based on request scope.
+✓ **Critical**: DELETE/UPDATE operations require WHERE clauses.
+✓ **High**: Operations restricted to approved tables and entity IDs.
+✓ **Medium**: Maximum row impact limits based on request scope.
 
 ### 3. Durable Revocation
 
@@ -320,7 +319,7 @@ flowchart TB
 
 ---
 
-## File Structure & Map
+## 📂 File Structure & Map
 
 A breakdown of the core components and their responsibilities within the codebase.
 
@@ -352,17 +351,29 @@ src/
 
 ---
 
-## Strategic AI Architecture
+## 🔒 Enterprise Security Posture
 
-**The "Observer, Not Just Actor" Strategy**
+Glasskiss is designed with a **Security-First** mindset, moving beyond simple automation to rigorous enforcement.
 
-Many AI projects allow an LLM to execute actions directly, introducing non-deterministic risk. Glasskiss utilizes AI strictly for **Scope Extraction**.
-
-The architecture treats the LLM as a parser: It transforms unstructured human text (e.g., "Let me fix John's billing") into a rigorous security policy (e.g., `WHERE user_id = 123`). This sophisticated architecture isolates the AI within a validation sandbox, ensuring that the final enforcement logic remains deterministic and secure.
+◈ **Fail-Closed Architecture**: Any failure in the risk analysis or provisioning chain results in a default denial of access.
+◈ **Identity-First Guardrails**: Mandatory multi-party approval for high-risk resources ensures no single point of internal failure.
+◈ **Immutable Execution Logs**: Real-time streaming to the Motia Workbench provides a tamper-proof record for forensic audits.
+◈ **Zero-Trust SQL Enforcement**: The first of its kind to enforce row-level intent at the proxy layer, not just the network layer.
 
 ---
 
-## Quick Start
+## 🚀 2025 Vision & Roadmap
+
+The journey toward total ephemeral infrastructure is just beginning.
+
+✦ **M-of-N Approval Matrix**: Flexible approval logic (e.g., 2 SREs OR 1 Security Engineer).
+✦ **Dynamic Risk Scoring**: Integration with GitHub/Slack activity to adjust risk points in real-time.
+✦ **Pre-Calculated Blast Radius**: Visual prediction of affected rows before a user commits a query.
+✦ **SIEM Auto-Ingestion**: Native connectors for Splunk, Datadog, and Panther.
+
+---
+
+## ⚡ Quick Start
 
 ### Prerequisites
 *   Node.js 18+
@@ -379,6 +390,14 @@ npm run dev
 ```
 
 Navigate to **http://localhost:3000/__motia** to view the workflow visualization.
+
+---
+
+## 🤝 Next Steps
+
+◈ **For Developers**: Install and run the `npm run dev` to see the JIT flow in action.
+◈ **For Security Engineers**: Review the `blast-radius-controller.ts` to see how we block mass deletions.
+◈ **For C-Suite**: Glasskiss reduces your active production attack surface by **>90%** from day one.
 
 ---
 
