@@ -94,6 +94,7 @@ export const handler: Handlers['ApproveRequestAPI'] = async (
                 resource: requestState.resource,
                 accessLevel: requestState.accessLevel,
                 duration: requestState.duration,
+                reason: requestState.reason,  // Pass reason for scope generation
             },
         })
 

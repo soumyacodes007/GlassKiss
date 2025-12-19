@@ -11,6 +11,7 @@ declare module 'motia' {
     'sessionLog': MotiaStream<{ id: string; requestId: string; sessionId: string; timestamp: string; command: string; queryType: string; flagged: boolean; flagReason?: string }>
     'auditReport': MotiaStream<{ id: string; requestId: string; requester: string; resource: string; accessLevel: string; approvers: Array<string>; riskScore: number; startTime: string; endTime: string; totalCommands: number; summary: string; flaggedCommands: number; status: string; revokeReason?: string }>
     'approvalRequest': MotiaStream<{ id: string; requestId: string; requester: string; resource: string; accessLevel: string; reason: string; riskScore: number; status: 'pending' | 'approved' | 'rejected'; approvers: Array<string>; requiredApprovals: number; currentApprovals: number; timestamp: string }>
+    'scopeEnforcement': MotiaStream<{ id: string; sessionId: string; requestId: string; timestamp: string; command: string; decision: 'allowed' | 'blocked'; reason?: string; violationType?: 'scope' | 'blast_radius' | 'operation' | 'table' | 'row_limit'; severity: 'low' | 'medium' | 'high' | 'critical' }>
   }
 
   interface Handlers {
@@ -22,15 +23,16 @@ declare module 'motia' {
     'StartMonitoring': EventHandler<{ requestId: string; sessionId: string }, never>
     'RevokeAccess': EventHandler<{ requestId: string; reason: 'timer_expired' | 'forced' | 'anomaly_detected' | 'manual'; details?: string }, { topic: 'generate-audit'; data: { requestId: string } }>
     'RequestApproval': EventHandler<{ requestId: string; requester: string; riskScore: number; resource: string; accessLevel: string; reason: string; requiredApprovals: number }, never>
-    'ProvisionCredentials': EventHandler<{ requestId: string; requester: string; resource: string; accessLevel: string; duration: number }, { topic: 'start-monitoring'; data: { requestId: string; sessionId: string } } | { topic: 'start-timer'; data: { requestId: string; duration: number } }>
+    'ProvisionCredentials': EventHandler<{ requestId: string; requester: string; resource: string; accessLevel: string; duration: number; reason?: string }, { topic: 'start-monitoring'; data: { requestId: string; sessionId: string } } | { topic: 'start-timer'; data: { requestId: string; duration: number } }>
     'GenerateAudit': EventHandler<{ requestId: string }, never>
     'DetectAnomaly': EventHandler<{ requestId: string; sessionId: string; command: string; logId: string }, { topic: 'force-revoke'; data: { requestId: string; reason: 'timer_expired' | 'forced' | 'anomaly_detected' | 'manual'; details?: string } }>
     'CalculateRiskScore': EventHandler<{ requestId: string; reason: string; resource: string; accessLevel: string }, { topic: 'request-approval'; data: { requestId: string; requester: string; riskScore: number; resource: string; accessLevel: string; reason: string; requiredApprovals: number } }>
-    'RejectRequestAPI': ApiRouteHandler<{ approver: string; reason?: string }, ApiResponse<200, { requestId: string; status: string; message: string }> | ApiResponse<404, { error: string }>, never>
-    'LogCommandAPI': ApiRouteHandler<{ command: string }, ApiResponse<200, { logged: boolean; flagged: boolean }>, { topic: 'detect-anomaly'; data: { requestId: string; sessionId: string; command: string; logId: string } }>
-    'ApproveRequestAPI': ApiRouteHandler<{ approver: string }, ApiResponse<200, { requestId: string; status: string; message: string }> | ApiResponse<404, { error: string }>, { topic: 'provision-credentials'; data: { requestId: string; requester: string; resource: string; accessLevel: string; duration: number } }>
-    'AccessRequestAPI': ApiRouteHandler<{ requester: string; resource: string; accessLevel: 'READ_ONLY' | 'READ_WRITE'; reason: string; duration: number }, ApiResponse<201, { requestId: string; status: string; message: string }> | ApiResponse<400, { error: string }>, { topic: 'calculate-risk-score'; data: { requestId: string; reason: string; resource: string; accessLevel: string } }>
     'CheckActiveCredentials': CronHandler<never>
+    'RejectRequestAPI': ApiRouteHandler<{ approver: string; reason?: string }, ApiResponse<200, { requestId: string; status: string; message: string }> | ApiResponse<404, { error: string }>, never>
+    'LogCommandAPI': ApiRouteHandler<{ command: string }, ApiResponse<200, { logged: boolean; flagged: boolean; blocked?: boolean; blockReason?: string; scopeInfo?: string }>, { topic: 'detect-anomaly'; data: { requestId: string; sessionId: string; command: string; logId: string } }>
+    'ApproveRequestAPI': ApiRouteHandler<{ approver: string }, ApiResponse<200, { requestId: string; status: string; message: string }> | ApiResponse<404, { error: string }>, { topic: 'provision-credentials'; data: { requestId: string; requester: string; resource: string; accessLevel: string; duration: number; reason?: string } }>
+    'AccessRequestAPI': ApiRouteHandler<{ requester: string; resource: string; accessLevel: 'READ_ONLY' | 'READ_WRITE'; reason: string; duration: number }, ApiResponse<201, { requestId: string; status: string; message: string }> | ApiResponse<400, { error: string }>, { topic: 'calculate-risk-score'; data: { requestId: string; reason: string; resource: string; accessLevel: string } }>
+    'SlackInteractivityAPI': ApiRouteHandler<{ payload?: string; action?: 'approve' | 'reject'; requestId?: string; approver?: string }, unknown, { topic: 'provision-credentials'; data: { requestId: string; requester: string; resource: string; accessLevel: string; duration: number; reason?: string } }>
   }
     
 }

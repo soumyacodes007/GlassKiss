@@ -1,6 +1,7 @@
 import { EventConfig, Handlers } from 'motia'
 import { z } from 'zod'
 import { randomBytes } from 'crypto'
+import { SlackService } from '../services/slack-service'
 
 const inputSchema = z.object({
     requestId: z.string(),
@@ -16,7 +17,7 @@ export const config: EventConfig = {
     type: 'event',
     name: 'RequestApproval',
     description:
-        'Creates approval request in stream and waits for human approval',
+        'Creates approval request in stream and sends Slack notification',
     flows: ['glasskiss'],
     subscribes: ['request-approval'],
     emits: [],
@@ -74,6 +75,21 @@ export const handler: Handlers['RequestApproval'] = async (
         approvers,
     })
 
-    // In production, this would send Slack notification
-    // For demo, approvers can use the API endpoints to approve/reject
+    // Send real Slack notification
+    try {
+        await SlackService.sendApprovalRequest({
+            requestId,
+            requester,
+            resource,
+            accessLevel,
+            reason,
+            riskScore,
+            requiredApprovals,
+            approvers,
+        })
+        logger.info('Slack notification sent', { requestId })
+    } catch (error) {
+        logger.warn('Failed to send Slack notification', { requestId, error })
+    }
 }
+

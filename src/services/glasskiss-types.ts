@@ -1,5 +1,26 @@
 import { z } from 'zod'
 
+// Extracted Entity Schema
+export const extractedEntitySchema = z.object({
+  type: z.string(),
+  field: z.string(),
+  value: z.string(),
+})
+
+export type ExtractedEntity = z.infer<typeof extractedEntitySchema>
+
+// Access Scope Schema - Maps approved intent to enforceable policies
+export const accessScopeSchema = z.object({
+  allowedTables: z.array(z.string()),
+  allowedOperations: z.array(z.string()),
+  rowFilters: z.record(z.string()),  // table -> WHERE condition
+  maxRowsAffected: z.number(),
+  extractedEntities: z.array(extractedEntitySchema),
+  scopeDescription: z.string(),
+})
+
+export type AccessScope = z.infer<typeof accessScopeSchema>
+
 // Access Request Schema
 export const accessRequestSchema = z.object({
   requester: z.string().min(1, 'Requester is required'),
@@ -50,6 +71,7 @@ export const credentialsSchema = z.object({
   expiresAt: z.string(),
   createdAt: z.string(),
   sessionId: z.string(),
+  accessScope: accessScopeSchema.optional(),  // Enforced SQL policy from approved scope
 })
 
 export type Credentials = z.infer<typeof credentialsSchema>

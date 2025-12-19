@@ -29,18 +29,67 @@ Glasskiss uses Motia's powerful primitives to create a **fail-closed**, **audita
 ✅ **Zombie Defense** - Daily cron scans for leaked credentials  
 ✅ **Compliance Audit** - AI-generated access reports  
 
+### 🆕 Zero-Trust SQL Enforcement + AI (NEW!)
+
+✅ **🤖 AI-Powered Scope Extraction** - Groq LLM understands "fix user #123" → enforces `WHERE id=123`  
+✅ **Reason-Bound Access** - Approved scope = Enforced SQL policy  
+✅ **Blast Radius Control** - Row limits, WHERE requirements, table restrictions  
+✅ **Pre-Execution Blocking** - 403 BEFORE dangerous queries run (not just detection)  
+✅ **Scope Enforcement Stream** - Real-time visibility into allow/block decisions  
+✅ **🔔 Interactive Slack Buttons** - Approve/Reject directly from Slack  
+✅ **🚨 Slack Security Alerts** - Real-time alerts when queries are blocked  
+
 ## 🏗️ Architecture
 
 ```
-Request → Risk Analysis → Approval → Provision
-                                        ↓
-                          ┌─────────────┴──────────────┐
-                          ↓                            ↓
-                    Timer (sleep)              Monitor (stream)
-                          ↓                            ↓
-                          └──────── Revoke ───────────┘
-                                     ↓
-                                Audit Report
+┌─────────────────────────────────────────────────────────────────────┐
+│                      📝 ACCESS REQUEST                              │
+│         "Debug payment failure for customer John - order #789"      │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│              🤖 AI RISK ANALYSIS + SCOPE EXTRACTION                 │
+│  ┌─────────────────────┐   ┌──────────────────────────────────────┐│
+│  │ Risk Score: 50/100  │   │ Proposed Scope:                      ││
+│  │ Factors: prod, write│   │   tables: [users, orders]            ││
+│  │ Required Approvals:1│   │   operations: [SELECT, UPDATE]       ││
+│  └─────────────────────┘   │   entities: [order: 789]             ││
+│                            └──────────────────────────────────────┘│
+└────────────────────────────────┬────────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│                  💬 SLACK APPROVAL (Interactive!)                   │
+│        Approver sees: risk + proposed scope → Approves BOTH         │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│              🔑 PROVISION (Scoped Credentials + Policy)             │
+│              CREATE USER temp_xxx VALID UNTIL + Scope Policy        │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 ↓
+              ┌──────────────────┴───────────────────┐
+              ↓                                      ↓
+┌─────────────────────────┐          ┌───────────────────────────────┐
+│     ⏰ DURABLE TIMER    │          │   🔒 LIVE POLICY ENFORCEMENT  │
+│   (Auto-revokes at TTL) │          │  Every query checked against  │
+│                         │          │  scope BEFORE execution       │
+└───────────┬─────────────┘          │                               │
+            │                        │  ✅ SELECT...WHERE id=789     │
+            │                        │  ❌ DELETE FROM users (BLOCKED)│
+            │                        │  📢 Slack alert on block      │
+            │                        └───────────────┬───────────────┘
+            └──────────────────┬─────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│                           🚫 REVOKE                                 │
+│                 Terminate sessions, DROP USER                       │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│                        📊 AI AUDIT REPORT                           │
+│   "Access granted for reason X, scope Y, actual usage Z"            │
+│   "5 queries within scope, 2 blocked (DELETE, DROP)"                │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## 🚀 Motia Primitives Used
@@ -66,7 +115,7 @@ src/
 ├── events/                           # Event Steps (Business Logic)
 │   ├── calculate-risk.step.ts        # AI risk scoring
 │   ├── request-approval.step.ts      # Create approval workflow
-│   ├── provision-credentials.step.ts # Generate temp credentials
+│   ├── provision-credentials.step.ts # Generate temp credentials + scope
 │   ├── start-timer.step.ts           # Durable access timer
 │   ├── start-monitoring.step.ts      # Initialize session monitoring
 │   ├── detect-anomaly.step.ts        # SQL watchdog
@@ -77,10 +126,13 @@ src/
 ├── streams/                          # Real-time Streams
 │   ├── approval-stream.stream.ts     # Approval status stream
 │   ├── session-log.stream.ts         # Command log stream
+│   ├── scope-enforcement.stream.ts   # 🆕 Scope enforcement decisions
 │   └── audit-report.stream.ts        # Audit report stream
 └── services/                         # Business Logic Layer
     ├── glasskiss-types.ts            # Zod schemas & types
     ├── risk-analyzer.ts              # Risk scoring logic
+    ├── scope-analyzer.ts             # 🆕 Reason → SQL scope extraction
+    ├── blast-radius-controller.ts    # 🆕 Row limits & query enforcement
     └── credential-manager.ts         # Simulated PostgreSQL provisioning
 ```
 
@@ -201,6 +253,70 @@ Dangerous patterns automatically trigger force revocation:
 - `UPDATE` without WHERE clause
 - `TRUNCATE TABLE`
 
+### 🆕 AI-Powered Scope Extraction (Groq LLM)
+
+**The Problem**: Traditional break-glass gives blanket access. "I need to fix user #123's billing" grants access to ALL users.
+
+**The Solution**: GlassKiss uses **Groq AI (openai/gpt-oss-120b)** to extract structured scope from natural language:
+
+```
+📝 Approval Reason: "Fix billing calculation for user #123 in users table"
+                                    ↓
+                        🤖 Groq AI Processing
+                                    ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ {                                                               │
+│   "tables": ["users", "billing"],                               │
+│   "entities": [{"type": "user", "id": "123"}],                  │
+│   "operations": ["SELECT", "UPDATE"],                           │
+│   "maxRows": 1,                                                 │
+│   "summary": "Access to users/billing for user 123"             │
+│ }                                                               │
+└─────────────────────────────────────────────────────────────────┘
+                                    ↓
+                      ✅ Scope Enforced at Query Time
+```
+
+**Why AI?**
+- Understands context: "customer John" → `WHERE name = 'John'`
+- Handles synonyms: "account", "user", "customer" → `users` table
+- Smart operation detection: "fix" → `UPDATE`, "check" → `SELECT`
+
+
+### 🆕 Blast Radius Control
+
+**Pre-execution guardrails** that BLOCK dangerous queries before they run (not just detect after).
+
+| Check | Rule | Severity |
+|-------|------|----------|
+| No WHERE clause | DELETE/UPDATE must have WHERE | Critical |
+| Row limit | Max rows affected based on approval | Medium |
+| Table allowlist | Only access approved tables | High |
+| Operation allowlist | Only perform approved operations | High |
+| Scope filter | Write queries must include approved entity ID | High |
+
+**Blocked Patterns:**
+```sql
+-- ❌ BLOCKED: No WHERE clause (affects all rows)
+DELETE FROM users;
+UPDATE users SET status = 'inactive';
+
+-- ❌ BLOCKED: DROP operations
+DROP TABLE users;
+TRUNCATE TABLE orders;
+
+-- ❌ BLOCKED: Outside approved scope
+SELECT * FROM admin_logs;  -- Table not in scope
+DELETE FROM users WHERE id = 999;  -- Wrong entity ID
+```
+
+**Enforcement Flow:**
+```
+SQL Command → Scope Check → Blast Radius Check → Allow/Block → Log
+                  ↓                   ↓
+            Return 403          Return 403
+```
+
 ## 📊 Risk Scoring Algorithm
 
 | Factor | Risk Points |
@@ -224,22 +340,37 @@ Dangerous patterns automatically trigger force revocation:
 4. **Fail-Closed Architecture**: Multiple failsafes ensure security
 5. **Beautiful Workbench Visualization**: Clear workflow representation
 6. **Production-Ready Pattern**: Template for similar access control systems
+7. **🆕 Zero-Trust at SQL Level**: Intent → Enforced Policy (nobody else does this!)
+8. **🆕 True Blast Radius Control**: Pre-execution blocking, not just detection
 
 ## 🎥 Demo Flow
 
 ### Happy Path
-1. Submit request with good reason + ticket
+1. Submit request with good reason + ticket: "Fix billing for user #123"
 2. Watch risk score calculate (low risk)
-3. Approve request → credentials provisioned
-4. Execute benign SELECT queries
+3. Approve request → credentials provisioned WITH scope
+4. Execute scoped SELECT: `SELECT * FROM users WHERE id = 123` ✅
 5. Timer expires → auto-revoke
-6. View audit: "User executed 5 SELECT queries"
+6. View audit: "User executed 5 SELECT queries within scope"
+
+### Scope Violation Path (NEW!)
+1. Submit request: "Fix billing for user #123"
+2. Approve → get scoped credentials
+3. Try: `SELECT * FROM users` (no WHERE for user 123)
+4. **BLOCKED** with 403: "Query must include scope filter: WHERE id = 123"
+5. Enforcement stream shows: `decision: blocked, violationType: scope`
+
+### Blast Radius Violation Path (NEW!)
+1. Submit request → approve
+2. Try: `DELETE FROM users;` (no WHERE clause)
+3. **BLOCKED** with 403: "DELETE requires WHERE clause. Mass deletes not permitted."
+4. Query never reaches database!
 
 ### Dangerous Command Path
 1. Submit request → approve
 2. Execute: `DROP TABLE users;`
-3. **IMMEDIATE FORCE REVOKE** triggered
-4. View audit: "WARNING: 1 dangerous command detected and blocked"
+3. **BLOCKED** by blast radius control (operation not allowed)
+4. View audit: "1 dangerous command blocked pre-execution"
 
 ## 👥 Authors
 
