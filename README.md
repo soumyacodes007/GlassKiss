@@ -72,6 +72,8 @@ Glasskiss demonstrates a production-ready architecture pattern achievable with t
 
 ## Architecture Overview
 
+![Glasskiss Architecture Whiteboard](./static/IMG-20251219-WA0024.jpg)
+
 ```mermaid
 flowchart TB
     subgraph Entry["Access Request Interface"]
@@ -314,6 +316,38 @@ flowchart TB
     style Data fill:#fff,stroke:#000,color:#000
     style AI fill:#fee2e2,stroke:#b91c1c,color:#000
     style Report fill:#111,stroke:#000,color:#fff
+```
+
+---
+
+## File Structure & Map
+
+A breakdown of the core components and their responsibilities within the codebase.
+
+```
+src/
+├── api/                              # HTTP Entry Points (API Steps)
+│   ├── access-request-api.step.ts    # POST /access-request: Initiates the workflow
+│   ├── approve-request-api.step.ts   # POST /approve: Handles Slack callbacks/CLI approvals
+│   └── log-command-api.step.ts       # POST /log: Ingests SQL commands from the proxy
+│
+├── events/                           # Asynchronous Business Logic (Event Steps)
+│   ├── calculate-risk.step.ts        # Analyzes request metadata to assign risk scores
+│   ├── provision-credentials.step.ts # Interacts with DB to create temp users
+│   ├── start-timer.step.ts           # Sets the durable revocation timer
+│   ├── detect-anomaly.step.ts        # Real-time analysis of streamed SQL commands
+│   ├── revoke-access.step.ts         # Destructive step: drops users and kills sessions
+│   └── generate-audit.step.ts        # Compiles session history into AI report
+│
+├── streams/                          # Real-Time Data Pipelines
+│   ├── session-log.stream.ts         # Broadcasts raw SQL command feeds
+│   └── scope-enforcement.stream.ts   # Broadcasts allow/block policy decisions
+│
+├── services/                         # Core Domain Logic (Pure Typescript)
+│   ├── ai-service.ts                 # Adapter for LLM (Groq) interaction
+│   ├── scope-analyzer.ts             # Parser: Natural Language -> Policy Object
+│   ├── blast-radius-controller.ts    # Enforcer: Policy Object -> Allow/Block Signal
+│   └── credential-manager.ts         # Infrastructure: SQL User Management
 ```
 
 ---
