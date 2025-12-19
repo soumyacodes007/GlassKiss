@@ -1,0 +1,80 @@
+[
+  {
+    "id": "basic-tutorial",
+    "config": {
+      "src\\petstore\\state-audit-cron.step.ts": {
+        "x": 140,
+        "y": -6
+      },
+      "src\\petstore\\process-food-order.step.ts": {
+        "x": 226,
+        "y": 219
+      },
+      "src\\petstore\\notification.step.ts": {
+        "x": 576,
+        "y": 141
+      },
+      "src\\petstore\\api.step.ts": {
+        "x": -267,
+        "y": 180
+      }
+    }
+  },
+  {
+    "id": "glasskiss",
+    "config": {
+      "src\\events\\start-timer.step.ts": {
+        "x": 1451,
+        "y": 552
+      },
+      "src\\events\\start-monitoring.step.ts": {
+        "x": 1454,
+        "y": 196
+      },
+      "src\\events\\revoke-access.step.ts": {
+        "x": 2059,
+        "y": 267
+      },
+      "src\\events\\request-approval.step.ts": {
+        "x": 696,
+        "y": 937
+      },
+      "src\\events\\provision-credentials.step.ts": {
+        "x": 1050,
+        "y": 259
+      },
+      "src\\events\\generate-audit.step.ts": {
+        "x": 2777,
+        "y": 37
+      },
+      "src\\events\\detect-anomaly.step.ts": {
+        "x": 1552,
+        "y": -114
+      },
+      "src\\events\\calculate-risk.step.ts": {
+        "x": -23,
+        "y": 210
+      },
+      "src\\api\\reject-request-api.step.ts": {
+        "x": 765,
+        "y": 437
+      },
+      "src\\api\\log-command-api.step.ts": {
+        "x": 899,
+        "y": -192
+      },
+      "src\\api\\approve-request-api.step.ts": {
+        "x": 680,
+        "y": 49
+      },
+      "src\\api\\access-request-api.step.ts": {
+        "x": -517,
+        "y": 156
+      },
+      "src\\cron\\check-active-creds.cron.step.ts": {
+        "x": 0,
+        "y": 368
+      }
+    }
+  }
+]
