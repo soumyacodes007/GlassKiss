@@ -97,11 +97,12 @@ export const handler: Handlers['SlackInteractivityAPI'] = async (
         }
     }
 
-    // Get approval state
-    const allApprovals = await state.getGroup('approval-status')
+    // Get approval state from STREAM (not state!)
+    const allApprovals = await streams.approvalRequest.getGroup('approvals')
     const approvalState = allApprovals.find((a: any) => a.requestId === requestId)
 
     if (!approvalState) {
+        logger.warn('Approval state not found', { requestId })
         return {
             status: 200,
             body: {
@@ -111,31 +112,16 @@ export const handler: Handlers['SlackInteractivityAPI'] = async (
         }
     }
 
+    logger.info('Found approval state', { requestId, approvalState })
+
     if (action === 'approve') {
-        // Check if approver is authorized
-        if (!approvalState.approvers?.includes(approver)) {
-            // For Slack users, allow if they have the word "lead" or "senior" in their name
-            const isAuthorized =
-                approver.toLowerCase().includes('lead') ||
-                approver.toLowerCase().includes('senior') ||
-                approver.toLowerCase().includes('vp') ||
-                approvalState.approvers?.includes(approver)
+        // For hackathon demo: allow any Slack user to approve
+        // In production, you would check against approvalState.approvers
+        logger.info('Approver authorized for demo', { approver, requiredApprovers: approvalState.approvers })
 
-            if (!isAuthorized) {
-                logger.warn('Unauthorized approver from Slack', { approver, requiredApprovers: approvalState.approvers })
-                return {
-                    status: 200,
-                    body: {
-                        response_type: 'ephemeral',
-                        text: `⚠️ You are not authorized to approve this request.\nRequired approvers: ${approvalState.approvers?.join(', ')}`,
-                    },
-                }
-            }
-        }
-
-        // Update approval status
+        // Update approval status in STREAM
         const newApprovals = (approvalState.currentApprovals || 0) + 1
-        await state.set('approval-status', requestId, {
+        await streams.approvalRequest.set('approvals', approvalState.id, {
             ...approvalState,
             currentApprovals: newApprovals,
             status: newApprovals >= approvalState.requiredApprovals ? 'approved' : 'pending',
@@ -187,27 +173,17 @@ export const handler: Handlers['SlackInteractivityAPI'] = async (
             },
         }
     } else if (action === 'reject') {
-        // Update states for rejection
-        await state.set('approval-status', requestId, {
+        // Update approval status in stream
+        await streams.approvalRequest.set('approvals', approvalState.id, {
             ...approvalState,
             status: 'rejected',
         })
 
+        // Update request state
         await state.set('access-requests', requestId, {
             ...requestState,
             status: 'rejected',
         })
-
-        // Update stream
-        const approvalEntry = (await streams.approvalRequest.list('approvals')).find(
-            (a: any) => a.requestId === requestId
-        )
-        if (approvalEntry) {
-            await streams.approvalRequest.set('approvals', approvalEntry.id, {
-                ...approvalEntry,
-                status: 'rejected',
-            })
-        }
 
         // Send Slack confirmation
         try {
